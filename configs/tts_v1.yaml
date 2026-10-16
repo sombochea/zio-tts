@@ -1,0 +1,14 @@
+# v1: multi-speaker on ALL 16 SLR42 speakers (2.9 h) instead of one 46-min speaker. More data = better pronunciation;
+# the voice is chosen by id at inference (<speaker>__neutral). ~3 steps/s on A100 -> 450 epochs ~ 40k steps ~ 4 h.
+data: data/processed/km_male
+run: zio_tts_v1
+out: outputs/tts_v1
+voices: true
+batch: 32
+epochs: 450
+workers: 4
+fp16: false
+save_step: 2500
+keep_ckpts: 3
+test_sentences:
+  - ["សួស្តី តើ អ្នក សុខសប្បាយ ជា ទេ"]

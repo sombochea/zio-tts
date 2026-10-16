@@ -31,8 +31,14 @@ def write_vocab(run_dir: str, out: str):
     cfg.load_json(Path(run_dir) / "config.json")
     tok, _ = TTSTokenizer.init_from_config(cfg)
     c = tok.characters
-    json.dump({"blank_id": c.blank_id, "sample_rate": 24000, "char_to_id": c._char_to_id}, open(out, "w"),
-              ensure_ascii=False, indent=1)
+    voices = None
+    spk = Path(run_dir) / "speakers.pth"
+    if spk.exists():
+        import torch
+
+        voices = torch.load(spk, map_location="cpu", weights_only=False)  # name -> id
+    json.dump({"blank_id": c.blank_id, "sample_rate": 24000, "char_to_id": c._char_to_id, "voices": voices,
+               "default_voice": "km_6753__neutral" if voices else None}, open(out, "w"), ensure_ascii=False, indent=1)
 
 
 if __name__ == "__main__":

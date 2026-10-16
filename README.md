@@ -15,8 +15,8 @@ Why graphemes: espeak-ng has no Khmer voice, so there is no off-the-shelf G2P. W
 ```bash
 git clone https://github.com/sombochea/zio-tts && cd zio-tts
 uv sync --extra tts                       # Python 3.12+, ffmpeg
-huggingface-cli download sombochea/zio-tts --local-dir zio-tts-v0
-uv run zio speak "សួស្តី តើអ្នកសុខសប្បាយជាទេ" hello.wav --run zio-tts-v0
+huggingface-cli download sombochea/zio-tts --local-dir zio-tts
+uv run zio speak "សួស្តី តើអ្នកសុខសប្បាយជាទេ" hello.wav --run zio-tts
 ```
 No PyTorch? Use the ONNX file: [`examples/onnx_infer.py`](examples/onnx_infer.py). Details and limitations are in the model card.
 
