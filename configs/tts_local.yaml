@@ -1,0 +1,15 @@
+# Low-RAM local TTS (Apple silicon / CPU). Short clips + small batch keep memory low.
+# Fine as a pipeline check or a first listenable model on one speaker; real quality needs Modal.
+data: data/processed/km_male
+run: tts_local
+out: outputs/tts_local
+speakers: [km_6753]
+batch: 4
+max_audio_s: 6
+epochs: 50
+workers: 0
+eval_size: 10
+save_step: 1000
+keep_ckpts: 1   # each checkpoint is ~1 GB; keep disk use ~3 GB
+test_sentences:
+  - ["សួស្តី តើ អ្នក សុខសប្បាយ ជា ទេ"]

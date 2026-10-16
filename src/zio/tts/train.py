@@ -43,8 +43,8 @@ def main(path: str):
         batch_group_size=0, num_loader_workers=c.get("workers", 2), num_eval_loader_workers=1,
         run_eval=True, test_delay_epochs=-1, epochs=c["epochs"], text_cleaner="basic_cleaners", use_phonemes=False,
         compute_input_seq_cache=True, print_step=c.get("print_step", 25), print_eval=True,
-        mixed_precision=c.get("fp16", False), save_step=c.get("save_step", 1000), save_n_checkpoints=2,
-        max_text_len=c.get("max_text_len", 300), min_audio_len=24000, max_audio_len=24000 * 15,
+        mixed_precision=c.get("fp16", False), save_step=c.get("save_step", 1000), save_n_checkpoints=c.get("keep_ckpts", 2),
+        max_text_len=c.get("max_text_len", 300), min_audio_len=24000, max_audio_len=int(24000 * c.get("max_audio_s", 15)),
         characters=CharactersConfig(characters_class="TTS.tts.utils.text.characters.Graphemes", pad="<PAD>",
                                     eos="<EOS>", bos="<BOS>", blank="<BLNK>", characters=CHARS, punctuations=PUNCT + " ",
                                     phonemes=None),
@@ -68,7 +68,7 @@ def main(path: str):
         cfg.model_args.num_speakers = sm.num_speakers
         cfg.num_speakers = sm.num_speakers
     model = Vits(cfg, ap, tok, speaker_manager=sm)
-    Trainer(TrainerArgs(), cfg, c["out"], model=model, train_samples=train, eval_samples=evl).fit()
+    Trainer(TrainerArgs(restore_path=c.get("resume", "")), cfg, c["out"], model=model, train_samples=train, eval_samples=evl).fit()
 
 
 if __name__ == "__main__":

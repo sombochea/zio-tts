@@ -21,5 +21,19 @@ def export(run_dir: str, out: str):
     model.export_onnx(out, verbose=False)
 
 
+def write_vocab(run_dir: str, out: str):
+    """vocab.json: char -> id plus the blank id. ids = blank between every char (VITS add_blank), unknown chars dropped."""
+    import json
+
+    from TTS.tts.utils.text.tokenizer import TTSTokenizer
+
+    cfg = VitsConfig()
+    cfg.load_json(Path(run_dir) / "config.json")
+    tok, _ = TTSTokenizer.init_from_config(cfg)
+    c = tok.characters
+    json.dump({"blank_id": c.blank_id, "sample_rate": 24000, "char_to_id": c._char_to_id}, open(out, "w"),
+              ensure_ascii=False, indent=1)
+
+
 if __name__ == "__main__":
     export(*sys.argv[1:3])

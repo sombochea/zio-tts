@@ -71,7 +71,7 @@ def main(path: str):
         gradient_accumulation_steps=cfg.get("accum", 1), learning_rate=float(cfg["lr"]), max_steps=cfg["steps"],
         warmup_steps=cfg.get("warmup", 50), eval_strategy="steps", eval_steps=cfg["eval_every"],
         save_steps=cfg["eval_every"], logging_steps=10, predict_with_generate=True, generation_max_length=225,
-        bf16=torch.cuda.is_available(), remove_unused_columns=False, label_names=["labels"],
+        bf16=torch.cuda.is_available(), use_cpu=cfg.get("cpu", False), remove_unused_columns=False, label_names=["labels"],
         report_to=cfg.get("report_to", "none"), save_total_limit=2)
     Seq2SeqTrainer(model=model, args=args, train_dataset=train, eval_dataset=evald, data_collator=Collator(proc),
                    compute_metrics=metrics).train()

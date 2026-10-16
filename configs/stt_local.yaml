@@ -1,0 +1,14 @@
+# Low-RAM local STT: whisper-tiny + LoRA, local manifest only (no big downloads). ~1 GB RAM.
+# For more accuracy use model: openai/whisper-base (~2x RAM) or run on Modal.
+cpu: true   # HF auto-picks Apple MPS, which slowed from 6 s to 77 s/step here; CPU stays flat
+model: openai/whisper-tiny
+manifests: [data/processed/km_male/manifest.jsonl]
+eval_manifests: [data/processed/km_male/manifest.jsonl]
+limit: 200
+out: outputs/stt_local
+batch: 4
+accum: 2
+lr: 1e-3
+steps: 40
+eval_every: 20
+lora_r: 16
