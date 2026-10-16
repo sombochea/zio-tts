@@ -88,12 +88,21 @@ def publish(run_dir: str, repo: str, kind: str = "tts", push: bool = False, publ
     torch.save({"model": torch.load(src / "best_model.pth", map_location="cpu", weights_only=False)["model"]},
                st / "best_model.pth")  # drop optimizer state; coqui's loader still needs disc.* weights
     shutil.copy(src / "config.json", st / "config.json")
+    if (src / "speakers.pth").exists():
+        shutil.copy(src / "speakers.pth", st / "speakers.pth")
     export(str(src), str(st / "zio-tts.onnx"))
     write_vocab(str(src), str(st / "vocab.json"))
     for i, t in enumerate(SAMPLES, 1):
         synthesize(str(src), t, str(st / "samples" / f"sample{i}.wav"))
+    extra = []
+    if (src / "speakers.pth").exists():  # same sentence, different voices
+        for v in ("km_6753__neutral", "km_7548__neutral", "km_3154__neutral"):
+            synthesize(str(src), SAMPLES[0], str(st / "samples" / f"voice_{v}.wav"), v)
+            extra.append(f"- voice `{v}` — `samples/voice_{v}.wav`")
     card = Path("/model_cards/tts.md").read_text().replace("{{REPO}}", repo)
     card += "\n## Sample sentences\n" + "\n".join(f"{i}. {t} — `samples/sample{i}.wav`" for i, t in enumerate(SAMPLES, 1)) + "\n"
+    if extra:
+        card += "\nSame sentence 1 in other voices:\n" + "\n".join(extra) + "\n"
     (st / "README.md").write_text(card)
     for f in sorted(st.rglob("*")):
         if f.is_file():
