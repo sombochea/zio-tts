@@ -32,6 +32,14 @@ def train(config: str, module: str = "zio.stt.train"):
         cfg["data"] = cfg["data"].replace("data/processed", "/vol/processed")
     cfg["out"] = "/vol/" + cfg["out"]
     yaml.safe_dump(cfg, open("/tmp/cfg.yaml", "w"))
+    import threading, time
+
+    def autosave():  # volume writes are only visible/durable after commit
+        while True:
+            time.sleep(600)
+            vol.commit()
+
+    threading.Thread(target=autosave, daemon=True).start()
     sys.argv = [module, "/tmp/cfg.yaml"]
     runpy.run_module(module, run_name="__main__")
     vol.commit()
