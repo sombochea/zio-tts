@@ -1,6 +1,6 @@
 """Run any zio trainer on a Modal GPU.
 
-  modal volume put zio-data data/processed /processed      # once; creates the volume if needed
+  modal volume create zio-data && modal volume put zio-data data/processed /processed   # once
   uv run modal run scripts/modal_train.py --config configs/stt_small.yaml
   uv run modal run scripts/modal_train.py --config configs/tts_base.yaml --module zio.tts.train
   modal volume get zio-data /outputs/stt_small ./outputs    # fetch the merged model
@@ -12,10 +12,11 @@ vol = modal.Volume.from_name("zio-data", create_if_missing=True)
 hf_cache = modal.Volume.from_name("huggingface-cache", create_if_missing=True)
 
 image = (modal.Image.debian_slim(python_version="3.12")
-         .apt_install("espeak-ng")
+         .apt_install("ffmpeg")  # torchcodec (audio IO) needs it
          .uv_pip_install("torch", "transformers", "datasets", "peft", "accelerate", "jiwer", "soundfile",
                          "soxr", "numpy", "pyyaml", "khmer-nltk", "coqui-tts[codec]", "torchaudio")
-         .add_local_python_source("zio")
+         .env({"PYTHONPATH": "/root"})
+         .add_local_dir("src/zio", "/root/zio")
          .add_local_dir("configs", "/root/configs"))
 
 

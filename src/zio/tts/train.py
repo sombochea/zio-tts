@@ -46,11 +46,13 @@ def main(path: str):
     tok, cfg = TTSTokenizer.init_from_config(cfg)
     train, evl = load_tts_samples(ds, eval_split=True, formatter=manifest_formatter,
                                   eval_split_max_size=c.get("eval_size", 50), eval_split_size=0.02)
-    if c.get("speakers"):  # v0 is single-voice: mixing speakers blurs the voice
-        keep = set(c["speakers"])
-        train, evl = [x for x in train if x["speaker_name"] in keep], [x for x in evl if x["speaker_name"] in keep]
+    allx = train + evl
+    if c.get("speakers"):  # v0 is single-voice: mixing speakers blurs the voice. Filter BEFORE splitting.
+        allx = [x for x in allx if x["speaker_name"] in set(c["speakers"])]
     if c.get("limit"):
-        train, evl = train[:c["limit"]], evl[:min(len(evl), c["limit"])]
+        allx = allx[:c["limit"]]
+    n_eval = min(c.get("eval_size", 20), max(len(allx) // 10, 1))
+    train, evl = allx[:-n_eval], allx[-n_eval:]
     model = Vits(cfg, ap, tok, speaker_manager=None)
     Trainer(TrainerArgs(), cfg, c["out"], model=model, train_samples=train, eval_samples=evl).fit()
 
