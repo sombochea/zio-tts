@@ -1,0 +1,21 @@
+[project]
+name = "zio"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "sombochea100@gmail.com", email = "sombochea100@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "khmer-nltk>=1.6",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.5,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
