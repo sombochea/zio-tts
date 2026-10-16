@@ -9,6 +9,23 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "khmer-nltk>=1.6",
+    "numpy>=2.5.4",
+    "soundfile>=0.14.0",
+    "soxr>=1.1.0",
+]
+
+[project.optional-dependencies]
+stt = [
+    "accelerate>=1.15.0",
+    "datasets>=5.1.0",
+    "jiwer>=4.0.0",
+    "peft>=0.21.2",
+    "torch>=2.14.1",
+    "transformers>=5.20.0",
+]
+tts = [
+    "coqui-tts[codec]>=0.27.5",
+    "torchaudio>=2.11.0",
 ]
 
 [build-system]

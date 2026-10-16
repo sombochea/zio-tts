@@ -1,0 +1,12 @@
+# Smoke test for multi-voice conditioning: two real speakers stand in for (speaker, emotion) ids.
+data: data/processed/km_male
+run: tts_voices_tiny
+out: outputs/tts_voices_tiny
+voices: true
+speakers: [km_6753, km_7548]
+batch: 2
+epochs: 2
+limit: 16
+workers: 0
+eval_size: 4
+print_step: 1

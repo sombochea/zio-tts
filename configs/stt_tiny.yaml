@@ -1,0 +1,12 @@
+# Low-memory smoke test (CPU, no big downloads): local manifest only, whisper-tiny.
+model: openai/whisper-tiny
+manifests: [data/processed/km_male/manifest.jsonl]
+eval_manifests: [data/processed/km_male/manifest.jsonl]
+limit: 16
+out: outputs/stt_tiny
+batch: 2
+lr: 1e-3
+steps: 6
+warmup: 1
+eval_every: 3
+lora_r: 8

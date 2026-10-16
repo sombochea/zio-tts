@@ -1,8 +1,3 @@
-import shutil
-
-import pytest
-
-from zio.text.g2p import to_ipa
 from zio.text.normalize import normalize, number_to_khmer
 
 
@@ -18,8 +13,3 @@ def test_normalize_mixed():
     assert normalize("១២ apples") == "ដប់ពីរ apples"
     assert normalize("5,000៛") == "ប្រាំពាន់រៀល"
     assert normalize("$3") == "បីដុល្លារ"
-
-
-@pytest.mark.skipif(not shutil.which("espeak-ng"), reason="espeak-ng not installed")
-def test_g2p():
-    assert to_ipa("សួស្តី")

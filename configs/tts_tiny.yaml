@@ -1,0 +1,10 @@
+# CPU smoke test: a few steps on 16 utterances.
+data: data/processed/km_male
+run: tts_tiny
+out: outputs/tts_tiny
+batch: 2
+epochs: 2
+limit: 16
+workers: 0
+eval_size: 4
+print_step: 1

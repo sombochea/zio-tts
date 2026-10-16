@@ -1,0 +1,12 @@
+# Real v0 run (Modal A100). Single speaker of SLR42-male (km_6753, 863 utts ~1 h): proves quality ceiling before recording.
+data: data/processed/km_male
+run: zio_tts_v0
+out: outputs/tts_v0
+speakers: [km_6753]
+batch: 32
+epochs: 1000
+workers: 4
+fp16: false
+save_step: 2000
+test_sentences:
+  - ["សួស្តី តើ អ្នក សុខសប្បាយ ជា ទេ"]
