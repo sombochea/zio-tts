@@ -23,6 +23,10 @@ stt = [
     "torch>=2.14.1",
     "transformers>=5.20.0",
 ]
+tts = [
+    "coqui-tts[codec]>=0.27.5",
+    "torchaudio>=2.11.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.9.5,<0.10.0"]
