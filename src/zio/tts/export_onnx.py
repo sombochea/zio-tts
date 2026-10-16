@@ -5,7 +5,7 @@ from pathlib import Path
 
 import torch
 
-import zio.tts  # noqa: F401  (compat shim)
+from zio.tts import local_config  # also installs the compat shim
 from TTS.tts.configs.vits_config import VitsConfig
 from TTS.tts.models.vits import Vits
 
@@ -13,7 +13,7 @@ from TTS.tts.models.vits import Vits
 def export(run_dir: str, out: str):
     run = Path(run_dir)
     cfg = VitsConfig()
-    cfg.load_json(run / "config.json")
+    cfg.load_json(local_config(run))
     model = Vits.init_from_config(cfg)
     model.load_checkpoint(cfg, run / "best_model.pth", eval=True)
     # VITS has data-dependent shapes; the dynamo exporter rejects it, the legacy tracer works.
@@ -28,7 +28,7 @@ def write_vocab(run_dir: str, out: str):
     from TTS.tts.utils.text.tokenizer import TTSTokenizer
 
     cfg = VitsConfig()
-    cfg.load_json(Path(run_dir) / "config.json")
+    cfg.load_json(local_config(run_dir))
     tok, _ = TTSTokenizer.init_from_config(cfg)
     c = tok.characters
     voices = None

@@ -60,58 +60,29 @@ def main(config: str, module: str = "zio.stt.train"):
     train.remote(config, module)
 
 
-SAMPLES = ["សួស្តី តើអ្នកសុខសប្បាយជាទេ", "ថ្ងៃនេះអាកាសធាតុល្អណាស់", "ម្ហូបនេះតម្លៃ ៥០០០៛", "កម្ពុជាជាប្រទេសមានប្រវត្តិសាស្ត្រយូរលង់"]
-
-
 @app.function(image=image, cpu=4, memory=16384, timeout=3600, secrets=[modal.Secret.from_name("huggingface-secret")],
               volumes={"/vol": vol})
-def publish(run_dir: str, repo: str, kind: str = "tts", push: bool = False, public: bool = False):
+def publish(run_dir: str, repo: str, kind: str = "tts", push: bool = False, public: bool = False, note: str = ""):
     """Stage a TTS run (inference-only ckpt, ONNX, vocab, samples, card) and optionally upload to the HF Hub.
     Dry run unless push=True; repos are private unless public=True."""
-    import os, shutil
+    import os
     from pathlib import Path
 
-    import soundfile  # noqa: F401
-    import torch
     from huggingface_hub import HfApi
 
-    from zio.tts.export_onnx import export, write_vocab
-    from zio.tts.infer import synthesize
+    from zio.tts.release import stage
 
     token = next((os.environ[k] for k in ("HF_TOKEN", "HUGGING_FACE_HUB_TOKEN", "HUGGINGFACE_TOKEN") if k in os.environ), None)
     assert token, f"no HF token in secret; env keys: {[k for k in os.environ if 'HF' in k or 'HUG' in k.upper()]}"
     api = HfApi(token=token)
     print("authenticated as", api.whoami()["name"])
-    src, st = Path(run_dir), Path("/tmp/stage")
-    shutil.rmtree(st, ignore_errors=True)
-    (st / "samples").mkdir(parents=True)
-    torch.save({"model": torch.load(src / "best_model.pth", map_location="cpu", weights_only=False)["model"]},
-               st / "best_model.pth")  # drop optimizer state; coqui's loader still needs disc.* weights
-    shutil.copy(src / "config.json", st / "config.json")
-    if (src / "speakers.pth").exists():
-        shutil.copy(src / "speakers.pth", st / "speakers.pth")
-    export(str(src), str(st / "zio-tts.onnx"))
-    write_vocab(str(src), str(st / "vocab.json"))
-    for i, t in enumerate(SAMPLES, 1):
-        synthesize(str(src), t, str(st / "samples" / f"sample{i}.wav"))
-    extra = []
-    if (src / "speakers.pth").exists():  # same sentence, different voices
-        for v in ("km_6753__neutral", "km_7548__neutral", "km_3154__neutral"):
-            synthesize(str(src), SAMPLES[0], str(st / "samples" / f"voice_{v}.wav"), v)
-            extra.append(f"- voice `{v}` — `samples/voice_{v}.wav`")
-    card = Path("/model_cards/tts.md").read_text().replace("{{REPO}}", repo)
-    card += "\n## Sample sentences\n" + "\n".join(f"{i}. {t} — `samples/sample{i}.wav`" for i, t in enumerate(SAMPLES, 1)) + "\n"
-    if extra:
-        card += "\nSame sentence 1 in other voices:\n" + "\n".join(extra) + "\n"
-    (st / "README.md").write_text(card)
-    for f in sorted(st.rglob("*")):
-        if f.is_file():
-            print(f"{f.stat().st_size / 1e6:9.1f} MB  {f.relative_to(st)}")
+    st = Path("/tmp/stage")
+    stage(Path(run_dir), st, Path("/model_cards/tts.md"), repo, note)
     if not push:
         print(f"DRY RUN: would upload to {repo} ({'public' if public else 'private'})")
         return
     api.create_repo(repo, private=not public, exist_ok=True)
-    api.upload_folder(folder_path=str(st), repo_id=repo, commit_message="Zio TTS v0")
+    api.upload_folder(folder_path=str(st), repo_id=repo, commit_message="Update Zio TTS")
     print("uploaded", repo)
 
 

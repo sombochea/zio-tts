@@ -10,4 +10,5 @@ import modal
 a = sys.argv[1:]
 fn = modal.Function.from_name("zio-train", "publish")
 with modal.enable_output():
-    fn.remote(a[0], a[1], "tts", "--push" in a, "--public" in a)
+    note = a[a.index("--note") + 1] if "--note" in a else ""
+    fn.remote(a[0], a[1], "tts", "--push" in a, "--public" in a, note)
