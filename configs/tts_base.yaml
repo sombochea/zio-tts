@@ -3,8 +3,9 @@ data: data/processed/km_male
 run: zio_tts_v0
 out: outputs/tts_v0
 speakers: [km_6753]
+resume: outputs/tts_v0/zio_tts_v0-October-16-2026_04+23AM-0000000/checkpoint_2000.pth
 batch: 32
-epochs: 1000
+epochs: 400   # resumes from step 2000 (~77 epochs); ~25 epochs/min on A100
 workers: 4
 fp16: false
 save_step: 2000

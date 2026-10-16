@@ -5,7 +5,7 @@ pipeline_tag: automatic-speech-recognition
 base_model: openai/whisper-small
 tags: [khmer, whisper, lora]
 ---
-# Zio STT (Khmer + English)
+# Zio STT (Khmer + English) — DRAFT, NOT YET TRAINED/PUBLISHED
 
 Whisper fine-tuned with LoRA (merged) on FLEURS (km, en) + local manifests.
 

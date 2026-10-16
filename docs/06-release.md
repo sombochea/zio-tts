@@ -1,12 +1,24 @@
 # 06 — Release to Hugging Face / GitHub
 
-Checklist (nothing here runs automatically; uploads are dry-run unless `--push`):
+Publishing runs **on Modal**, using the `huggingface-secret` Modal secret (no local HF login needed). It stages an
+inference-only checkpoint (optimizer state dropped: 998 MB -> 333 MB), ONNX export, `vocab.json`, four generated
+samples and the model card, then uploads.
 
-1. Listen to the checkpoint on held-out sentences; fill the **TODO** results in `docs/model_cards/*.md` (MOS-style notes for TTS, CER/WER for STT). Don't publish without them.
-2. Decide the weight license (SLR42 is CC BY-SA 4.0 → likely CC BY-SA for TTS weights; update the card).
-3. Export ONNX (CPU/edge): `uv run --extra tts python -m zio.tts.export_onnx <run_dir> zio-tts.onnx` (inputs: `input`, `input_lengths`, `scales=[noise, length, noise_dp]`; tokenization must match `zio.tts.vocab` — an ONNX-only runtime needs the char list shipped alongside).
-4. Stage and inspect: `uv run --extra tts python scripts/push_to_hf.py tts <run_dir> --repo <user>/zio-tts`
-5. Upload (private by default): add `--push`; add `--public` to publish.
-6. Tag a GitHub release; link the HF repos from the README.
+```bash
+modal deploy scripts/modal_train.py                       # after any code/doc change
+RUN=/vol/outputs/tts_v0/<run_dir>                        # path on the zio-data volume
+uv run python scripts/modal_publish.py $RUN <user>/zio-tts              # DRY RUN: lists files, checks auth
+uv run python scripts/modal_publish.py $RUN <user>/zio-tts --push       # uploads as PRIVATE
+uv run python scripts/modal_publish.py $RUN <user>/zio-tts --push --public   # public
+```
+(`modal app logs zio-train` shows the remote output if your terminal does not.)
 
-Voice ethics: only release voices with signed consent; say in the card that outputs are synthetic.
+## Before making a repo public
+1. Listen to `samples/` and to your own test sentences.
+2. Confirm the license in `docs/model_cards/tts.md` (CC BY-SA 4.0 because SLR42 is share-alike; not legal advice).
+3. Add numbers (intelligibility CER via our STT, small MOS panel) to the card's *Evaluation* section.
+4. Only release voices you have consent for; state that outputs are synthetic.
+
+## STT
+`docs/model_cards/stt.md` is a **draft**: no STT model has been trained at scale or evaluated. Train with
+`configs/stt_small.yaml` on Modal ([04](04-stt-training.md)), add CER/WER, then extend `publish` for STT.
