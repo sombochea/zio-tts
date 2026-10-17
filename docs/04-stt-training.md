@@ -21,7 +21,7 @@ Uses the existing `huggingface-secret` and `huggingface-cache` volume; A100-80GB
 
 ## Real run (own GPU)
 ```bash
-huggingface-cli login            # optional, faster downloads
+hf auth login            # optional, faster downloads
 uv run --extra stt python -m zio.stt.train configs/stt_small.yaml
 ```
 Scale up: set `model: openai/whisper-large-v3-turbo`, batch 8 / accum 4 on an A100. Add more manifests (Common Voice, own recordings) under `manifests:`.

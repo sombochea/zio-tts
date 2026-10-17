@@ -1,6 +1,6 @@
 # 06 — Release to Hugging Face / GitHub
 
-Publishing runs **on Modal**, using the `huggingface-secret` Modal secret (no local HF login needed). It stages an
+Publishing runs **on Modal** (or on your machine / Kaggle: `scripts/push_to_hf.py <run_dir> <user>/zio-tts [--push]`, which uses the `hf` CLI after `hf auth login`; see [08](08-kaggle.md)), using the `huggingface-secret` Modal secret (no local HF login needed). It stages an
 inference-only checkpoint (optimizer state dropped: 998 MB -> 333 MB), ONNX export, `vocab.json`, four generated
 samples and the model card, then uploads.
 
