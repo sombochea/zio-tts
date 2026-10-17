@@ -1,5 +1,5 @@
 """Stage a trained TTS run and (optionally) upload it to the Hugging Face Hub from THIS machine. DRY RUN unless --push.
-Needs `hf auth login` (or HF_TOKEN). Repo is PRIVATE unless --public.
+Needs `hf auth login` (or HF_TOKEN). Uploads with the `hf` CLI. Repo is PRIVATE unless --public.
 
   uv run --extra tts python scripts/push_to_hf.py outputs/tts_v1_interim <user>/zio-tts
   uv run --extra tts python scripts/push_to_hf.py outputs/tts_v1_interim <user>/zio-tts --push --note "Interim checkpoint ..."
@@ -22,10 +22,8 @@ stage(a.src, st, Path(__file__).parent.parent / "docs" / "model_cards" / "tts.md
 if not a.push:
     print(f"\nDRY RUN: would upload to {a.repo} ({'public' if a.public else 'private'}). Add --push.")
 else:
-    from huggingface_hub import HfApi
+    import subprocess
 
-    api = HfApi()
-    print("authenticated as", api.whoami()["name"])
-    api.create_repo(a.repo, private=not a.public, exist_ok=True)
-    api.upload_folder(folder_path=str(st), repo_id=a.repo, commit_message="Update Zio TTS")
+    hf = ["hf", "upload", a.repo, str(st), "--commit-message", "Update Zio TTS"]
+    subprocess.run(hf + ([] if a.public else ["--private"]), check=True)
     print("uploaded", a.repo)
