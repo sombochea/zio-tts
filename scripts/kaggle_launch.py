@@ -5,6 +5,7 @@
 """
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -18,11 +19,11 @@ a = ap.parse_args()
 user = subprocess.run(["kaggle", "config", "view"], capture_output=True, text=True).stdout
 user = next((l.split(":")[1].strip() for l in user.splitlines() if "username" in l.lower()), None) or input("Kaggle username: ")
 
-ds = Path(tempfile.mkdtemp()) / "ds"
+ds = Path(tempfile.mkdtemp(dir=".")) / "ds"  # same volume as the data so hardlinks work (disk is tight)
 ds.mkdir()
-shutil.copytree(a.data, ds / a.data.name)  # kaggle does not follow symlinks
+shutil.copytree(a.data, ds / a.data.name, copy_function=os.link)  # kaggle does not follow symlinks
 if a.ckpt:
-    shutil.copy(a.ckpt, ds)
+    os.link(a.ckpt, ds / a.ckpt.name)
 (ds / "dataset-metadata.json").write_text(json.dumps({"title": "zio-km-male", "id": f"{user}/zio-km-male", "licenses": [{"name": "CC-BY-SA-4.0"}]}))
 ver = subprocess.run(["kaggle", "datasets", "status", f"{user}/zio-km-male"], capture_output=True).returncode == 0
 subprocess.run(["kaggle", "datasets", "version" if ver else "create", "-p", str(ds), "-r", "zip", *(["-m", "update"] if ver else [])], check=True)
