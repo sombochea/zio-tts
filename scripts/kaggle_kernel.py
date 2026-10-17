@@ -22,12 +22,13 @@ try:  # HF token from Kaggle "Add-ons > Secrets" (name: HF_TOKEN); optional
     from kaggle_secrets import UserSecretsClient
     os.environ["HF_TOKEN"] = UserSecretsClient().get_secret("HF_TOKEN")
 except Exception as e:
-    print("no HF_TOKEN secret; will stage only:", e)
+    print("no HF_TOKEN secret (attach it: notebook Add-ons > Secrets > HF_TOKEN, toggle ON); will stage only:", e)
 
 sh("pip install -q 'coqui-tts[codec]' khmer-nltk soxr pyyaml onnx onnxscript onnxruntime huggingface_hub", check=True)
-sh(f"rm -rf {W}/repo && git clone --depth 1 https://github.com/sombochea/zio-tts {W}/repo", check=True)
-os.chdir(W / "repo")
-env = {**os.environ, "PYTHONPATH": str(W / "repo/src")}
+# code ships inside the dataset (the GitHub repo may be private, so no git clone)
+CODE = next(Path("/kaggle/input").rglob("push_to_hf.py")).parent.parent
+os.chdir(CODE)
+env = {**os.environ, "PYTHONPATH": str(CODE / "src")}
 
 ck = next(IN.glob("**/best_model*.pth"), None)  # interim checkpoint to resume from, if shipped in the dataset
 cfg = (Path("configs/tts_v1.yaml").read_text()
@@ -35,9 +36,9 @@ cfg = (Path("configs/tts_v1.yaml").read_text()
        .replace("batch: 32", "batch: 16").replace("workers: 4", "workers: 2").replace("save_step: 2500", "save_step: 1000"))
 if ck:
     cfg += f"resume: {ck}\n"
-Path("/tmp/kaggle.yaml").write_text(cfg)
+Path("/kaggle/working/kaggle.yaml").write_text(cfg)
 
-r = sh(f"timeout {int(BUDGET_H * 3600)} python -m zio.tts.train /tmp/kaggle.yaml", env=env)
+r = sh(f"timeout {int(BUDGET_H * 3600)} python -m zio.tts.train /kaggle/working/kaggle.yaml", env=env)
 print("training exit", r.returncode, "(124 = time budget reached, expected)")
 
 runs = sorted((W / "out").glob("zio_tts_v1-*"), key=lambda p: p.stat().st_mtime)

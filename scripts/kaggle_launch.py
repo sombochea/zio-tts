@@ -22,6 +22,9 @@ user = next((l.split(":")[1].strip() for l in user.splitlines() if "username" in
 ds = Path(tempfile.mkdtemp(dir=".")) / "ds"  # same volume as the data so hardlinks work (disk is tight)
 ds.mkdir()
 shutil.copytree(a.data, ds / a.data.name, copy_function=os.link)  # kaggle does not follow symlinks
+root = Path(__file__).parent.parent
+for d in ("src", "scripts", "configs", "examples", "docs/model_cards"):  # code travels with the dataset (repo may be private)
+    shutil.copytree(root / d, ds / "repo" / d, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
 if a.ckpt:
     os.link(a.ckpt, ds / a.ckpt.name)
 (ds / "dataset-metadata.json").write_text(json.dumps({"title": "zio-km-male", "id": f"{user}/zio-km-male", "licenses": [{"name": "CC-BY-SA-4.0"}]}))
@@ -37,3 +40,5 @@ shutil.copy(Path(__file__).parent / "kaggle_kernel.py", k)
 subprocess.run(["kaggle", "kernels", "push", "-p", str(k)], check=True)
 print(f"pushed. In the notebook UI add secret HF_TOKEN (Add-ons > Secrets) to auto-publish, then re-run.\n"
       f"  kaggle kernels status {user}/zio-tts-train\n  kaggle kernels output {user}/zio-tts-train -p out")
+
+shutil.rmtree(ds.parent, ignore_errors=True)
