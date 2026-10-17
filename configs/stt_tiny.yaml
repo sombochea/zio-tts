@@ -1,7 +1,7 @@
 # Low-memory smoke test (CPU, no big downloads): local manifest only, whisper-tiny.
 model: openai/whisper-tiny
-manifests: [data/processed/km_male/manifest.jsonl]
-eval_manifests: [data/processed/km_male/manifest.jsonl]
+manifests: [data/processed/slr42_km_male/metadata.jsonl]
+eval_manifests: [data/processed/slr42_km_male/metadata.jsonl]
 limit: 16
 out: outputs/stt_tiny
 batch: 2

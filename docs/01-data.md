@@ -1,21 +1,32 @@
 # 01 — Data
 
-## Manifest format
-One JSON per line (`manifest.jsonl`): `id, audio, text, lang, speaker, emotion, duration`.
-Audio is 24 kHz mono 16-bit wav, silence-trimmed, peak-normalized, 1–20 s.
-Text is normalized (Khmer numerals/currency -> words, `zio.text.normalize`).
-
-## Step 1 — SLR42 (Google Khmer, CC BY-SA 4.0)
-Only the male zip (~866 MB, ~2.9 h, 2,906 utts) is currently listed on OpenSLR.
+All training data lives in the public dataset [sombochea/zio-tts-data](https://huggingface.co/datasets/sombochea/zio-tts-data), one folder per source. Train from it directly:
 ```bash
-mkdir -p data/raw/slr42 && cd data/raw/slr42
-curl -LO https://www.openslr.org/resources/42/km_kh_male.zip && unzip -q km_kh_male.zip && cd -
-uv run python -m zio.data.prepare slr42 data/raw/slr42/km_kh_male data/processed/km_male
+hf download sombochea/zio-tts-data --repo-type dataset --local-dir data/processed   # or --include "seanghay_km/*"
 ```
-Transcripts are already space-segmented into words.
 
-## Licensing
-SLR42 is CC BY-SA: share-alike applies to derived data; check before releasing weights/datasets under a different license.
+## Format
+Each folder is a Hugging Face *audiofolder*: `wavs/*.wav` + `metadata.jsonl`, one row per clip:
+```json
+{"id": "km_6753_001", "file_name": "wavs/km_6753_001.wav", "text": "សួស្តី តើ អ្នក សុខសប្បាយ ជា ទេ", "lang": "km",
+ "speaker": "km_6753", "emotion": "neutral", "events": [], "duration": 2.4, "source": "https://openslr.org/42", "license": "cc-by-sa-4.0"}
+```
+- Audio: 24 kHz mono 16-bit, 1–20 s, silence-trimmed, −20 dBFS RMS (peaks ≤ 0.95).
+- Text: normalized (digits and `៛`/`$` → words) and **word-spaced** Khmer. Rows with characters outside the [vocab](../src/zio/tts/vocab.py) are dropped.
+- `speaker` must be unique across folders (prefix it with the source). `emotion` and `events` are described in [02](02-recording.md).
 
-## Next
-FLEURS / Common Voice Khmer for STT, English corpora, and own studio recordings (emotion + premium voice) are added as new `*_items` readers in `prepare.py`.
+## Sources
+| Folder | Prepare | License |
+|---|---|---|
+| `slr42_km_male` | `prepare slr42 data/processed/slr42_km_male --src data/raw/slr42/km_kh_male` (download [km_kh_male.zip](https://www.openslr.org/resources/42/km_kh_male.zip) first) | CC BY-SA 4.0 |
+| `seanghay_km` | `prepare seanghay data/processed/seanghay_km --min-snr 20` | CC BY 4.0 |
+| `ddd_km` | `prepare ddd data/processed/ddd_km --max-hours 30 --min-snr 20` | CC BY-SA 4.0 |
+
+Run each as `uv run --extra stt --extra tts python -m zio.data.prepare ...`. Hugging Face sources are streamed, never fully downloaded. `--max-hours` caps the size, and `--min-snr` drops noisy clips.
+
+## Add a source
+1. Add an entry to `CORPORA` in [`prepare.py`](../src/zio/data/prepare.py). For a Hub dataset that's the repo, its text column and its speaker column, with no new code.
+2. Prepare it, listen to a few clips, then upload: `uv run python scripts/push_dataset.py data/processed/<folder> --push`.
+3. Add the folder to `configs:` and the table in [`docs/cards/dataset.md`](cards/dataset.md).
+
+Licenses: only add data whose license allows redistribution. Share-alike (CC BY-SA) data makes the model and dataset CC BY-SA too.

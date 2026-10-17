@@ -24,7 +24,7 @@ image = (modal.Image.debian_slim(python_version="3.12")
          .env({"PYTHONPATH": "/root"})
          .add_local_dir("src/zio", "/root/zio")
          .add_local_dir("configs", "/root/configs")
-         .add_local_dir("docs/model_cards", "/model_cards")
+         .add_local_dir("docs/cards", "/cards")
          .add_local_dir("examples", "/root/examples"))
 
 
@@ -37,7 +37,8 @@ def train(config: str, module: str = "zio.stt.train"):
     cfg["manifests"] = [m.replace("data/processed", "/vol/processed") for m in cfg.get("manifests", [])]
     cfg["eval_manifests"] = [m.replace("data/processed", "/vol/processed") for m in cfg.get("eval_manifests", [])]
     if "data" in cfg:
-        cfg["data"] = cfg["data"].replace("data/processed", "/vol/processed")
+        d = [cfg["data"]] if isinstance(cfg["data"], str) else cfg["data"]
+        cfg["data"] = [x.replace("data/processed", "/vol/processed") for x in d]
     if cfg.get("resume"):  # path under outputs/ on the volume
         cfg["resume"] = "/vol/" + cfg["resume"]
     cfg["out"] = "/vol/" + cfg["out"]
@@ -77,7 +78,7 @@ def publish(run_dir: str, repo: str, kind: str = "tts", push: bool = False, publ
     api = HfApi(token=token)
     print("authenticated as", api.whoami()["name"])
     st = Path("/tmp/stage")
-    stage(Path(run_dir), st, Path("/model_cards/tts.md"), repo, note)
+    stage(Path(run_dir), st, Path("/cards/tts.md"), repo, note)
     if not push:
         print(f"DRY RUN: would upload to {repo} ({'public' if public else 'private'})")
         return

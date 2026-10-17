@@ -1,5 +1,5 @@
 # CPU smoke test: a few steps on 16 utterances.
-data: data/processed/km_male
+data: data/processed/slr42_km_male
 run: tts_tiny
 out: outputs/tts_tiny
 batch: 2

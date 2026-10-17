@@ -2,8 +2,8 @@
 # For more accuracy use model: openai/whisper-base (~2x RAM) or run on Modal.
 cpu: true   # HF auto-picks Apple MPS, which slowed from 6 s to 77 s/step here; CPU stays flat
 model: openai/whisper-tiny
-manifests: [data/processed/km_male/manifest.jsonl]
-eval_manifests: [data/processed/km_male/manifest.jsonl]
+manifests: [data/processed/slr42_km_male/metadata.jsonl]
+eval_manifests: [data/processed/slr42_km_male/metadata.jsonl]
 limit: 200
 out: outputs/stt_local
 batch: 4

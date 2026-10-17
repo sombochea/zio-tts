@@ -1,7 +1,7 @@
 # Real run (1 GPU, >=16 GB). Swap model for openai/whisper-large-v3-turbo with batch 8 accum 4 on A100.
 model: openai/whisper-small
 fleurs: [km, en]
-manifests: [data/processed/km_male/manifest.jsonl]
+manifests: [data/processed/slr42_km_male/metadata.jsonl]
 out: outputs/stt_small
 batch: 16
 accum: 2

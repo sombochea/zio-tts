@@ -1,0 +1,15 @@
+# Fine-tune the published model on your own voice(s). Needs ~30 min+ of clean audio in the audiofolder
+# layout (docs/01-data.md). New voices get fresh embeddings; everything else starts from the base model.
+#   hf download sombochea/zio-tts best_model.pth --local-dir base
+data: data/processed/my_voice
+resume: base/best_model.pth
+run: zio_tts_ft
+out: outputs/tts_ft
+voices: true
+batch: 16
+epochs: 100
+workers: 2
+save_step: 1000
+keep_ckpts: 2
+test_sentences:
+  - ["សួស្តី តើ អ្នក សុខសប្បាយ ជា ទេ"]

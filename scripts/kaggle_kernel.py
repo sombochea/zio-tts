@@ -1,15 +1,16 @@
-"""Runs ON Kaggle (free GPU, ~9 h/session): resume-train Zio TTS v1, then stage + upload to the Hub with `hf`.
-Started by scripts/kaggle_launch.py; see docs/08-kaggle.md. Inputs: dataset `zio-km-male` (data + resume checkpoint).
+"""Runs ON Kaggle (free GPU, ~9 h/session): pull data from the HF dataset, (resume-)train Zio TTS, then stage + upload with `hf`.
+Started by scripts/kaggle_launch.py; see docs/03-training.md. Input: Kaggle dataset `zio-tts-code` (code + optional checkpoint).
 """
 import os
 import subprocess
-import sys
 from pathlib import Path
 
+import yaml
+
 REPO = os.environ.get("ZIO_REPO", "sombochea/zio-tts")
+DATA_REPO = os.environ.get("ZIO_DATA", "sombochea/zio-tts-data")
+CONFIG = os.environ.get("ZIO_CONFIG", "configs/tts_v2.yaml")
 BUDGET_H = float(os.environ.get("ZIO_HOURS", "8.5"))  # stop before Kaggle's session limit, then publish what we have
-MAN = next(Path("/kaggle/input").rglob("manifest.jsonl")).parent  # mount path varies by Kaggle version
-IN = MAN.parent
 W = Path("/kaggle/working")
 
 
@@ -25,24 +26,28 @@ except Exception as e:
     print("no HF_TOKEN secret (attach it: notebook Add-ons > Secrets > HF_TOKEN, toggle ON); will stage only:", e)
 
 sh("pip install -q 'coqui-tts[codec]' khmer-nltk soxr pyyaml onnx onnxscript onnxruntime huggingface_hub", check=True)
-# code ships inside the dataset (the GitHub repo may be private, so no git clone)
+# code ships inside the Kaggle dataset (no git clone, so a private repo works too)
 CODE = next(Path("/kaggle/input").rglob("push_to_hf.py")).parent.parent
 os.chdir(CODE)
 env = {**os.environ, "PYTHONPATH": str(CODE / "src")}
 
-ck = next(IN.glob("**/best_model*.pth"), None)  # interim checkpoint to resume from, if shipped in the dataset
-cfg = (Path("configs/tts_v1.yaml").read_text()
-       .replace("data/processed/km_male", str(MAN)).replace("outputs/tts_v1", str(W / "out"))
-       .replace("batch: 32", "batch: 16").replace("workers: 4", "workers: 2").replace("save_step: 2500", "save_step: 1000"))
+c = yaml.safe_load(Path(CONFIG).read_text())
+dirs = [c["data"]] if isinstance(c["data"], str) else c["data"]
+subsets = [Path(d).name for d in dirs]
+sh(f"hf download {DATA_REPO} --repo-type dataset --local-dir {W / 'data'} "
+   + " ".join(f"--include '{s}/*'" for s in subsets), check=True)
+c["data"] = [str(W / "data" / s) for s in subsets]
+c["out"] = str(W / "out")
+c.update(batch=min(c["batch"], 16), workers=2, save_step=1000)  # T4/P100: 16 GB
+ck = next(Path("/kaggle/input").rglob("best_model*.pth"), None)  # checkpoint shipped by kaggle_launch.py --ckpt
 if ck:
-    cfg += f"resume: {ck}\n"
-Path("/kaggle/working/kaggle.yaml").write_text(cfg)
+    c["resume"] = str(ck)
+Path(W / "kaggle.yaml").write_text(yaml.safe_dump(c, allow_unicode=True))
 
-r = sh(f"timeout {int(BUDGET_H * 3600)} python -m zio.tts.train /kaggle/working/kaggle.yaml", env=env)
+r = sh(f"timeout {int(BUDGET_H * 3600)} python -m zio.tts.train {W / 'kaggle.yaml'}", env=env)
 print("training exit", r.returncode, "(124 = time budget reached, expected)")
 
-runs = sorted((W / "out").glob("zio_tts_v1-*"), key=lambda p: p.stat().st_mtime)
+runs = sorted((W / "out").glob(f"{c['run']}-*"), key=lambda p: p.stat().st_mtime)
 assert runs, "no run dir produced"
 push = "--push" if os.environ.get("HF_TOKEN") else ""
-note = "Trained on Kaggle (resumed from the Modal interim checkpoint)."
-sh(f"python scripts/push_to_hf.py {runs[-1]} {REPO} {push} --note '{note}'", env=env, check=True)
+sh(f"python scripts/push_to_hf.py {runs[-1]} {REPO} {push} --note 'Trained on Kaggle with {CONFIG}.'", env=env, check=True)

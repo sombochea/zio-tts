@@ -1,5 +1,5 @@
 # Smoke test for multi-voice conditioning: two real speakers stand in for (speaker, emotion) ids.
-data: data/processed/km_male
+data: data/processed/slr42_km_male
 run: tts_voices_tiny
 out: outputs/tts_voices_tiny
 voices: true

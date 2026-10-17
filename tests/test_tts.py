@@ -9,7 +9,7 @@ def test_segment_adds_spaces_keeps_english():
 
 def test_vocab_covers_slr42():
     import json, pathlib
-    m = pathlib.Path("data/processed/km_male/manifest.jsonl")
+    m = pathlib.Path("data/processed/slr42_km_male/metadata.jsonl")
     if m.exists():
         used = set("".join(json.loads(l)["text"] for l in m.read_text().splitlines()))
         assert used - set(CHARS + " ,.!?;:'\"-") == set()

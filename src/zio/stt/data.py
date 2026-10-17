@@ -28,7 +28,7 @@ def _decode(b: bytes) -> np.ndarray:
 def from_manifest(path: Path) -> Dataset:
     rows = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines()]
     root = path.parent
-    return Dataset.from_list([{"audio": str(root / r["audio"]), "text": clean(r["text"], r["lang"]), "lang": r["lang"]}
+    return Dataset.from_list([{"audio": str(root / r["file_name"]), "text": clean(r["text"], r["lang"]), "lang": r["lang"]}
                               for r in rows]).cast_column("audio", Audio(sampling_rate=16000, decode=False))
 
 
