@@ -45,8 +45,10 @@ if PREP:  # data job: prepare -> upload, no training
 c = yaml.safe_load(Path(CONFIG).read_text())
 dirs = [c["data"]] if isinstance(c["data"], str) else c["data"]
 subsets = [Path(d).name for d in dirs]
-sh(f"hf download {DATA_REPO} --repo-type dataset --local-dir {W / 'data'} "
+sh(f"hf download {DATA_REPO} --repo-type dataset --local-dir {W / 'data'} --max-workers 32 "  # ~25k small files
    + " ".join(f"--include '{s}/*'" for s in subsets), check=True)
+missing = [s for s in subsets if not (W / "data" / s / "metadata.jsonl").exists()]
+assert not missing, f"not on the Hub (yet?): {missing}. Upload them first (docs/01-data.md) or drop them from {CONFIG}"
 c["data"] = [str(W / "data" / s) for s in subsets]
 c["out"] = str(W / "out")
 c.update(batch=min(c["batch"], 16), workers=2, save_step=1000)  # T4/P100: 16 GB
