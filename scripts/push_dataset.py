@@ -6,6 +6,7 @@ Needs `hf auth login`. Not the repo owner? Add --pr to open a pull request inste
 import argparse
 import json
 import subprocess
+from collections import Counter
 from pathlib import Path
 
 ap = argparse.ArgumentParser()
@@ -18,6 +19,8 @@ a = ap.parse_args()
 rows = [json.loads(l) for l in (a.src / "metadata.jsonl").read_text(encoding="utf-8").splitlines()]
 missing = [r["file_name"] for r in rows if not (a.src / r["file_name"]).exists()]
 assert not missing, f"{len(missing)} audio files missing, e.g. {missing[:3]}"
+big = max(Counter(str(Path(r["file_name"]).parent) for r in rows).values())
+assert big < 10000, "the Hub allows at most 10k files per folder; re-run zio.data.prepare (it shards wavs/)"
 print(f"{a.src.name}: {len(rows)} clips, {sum(r['duration'] for r in rows) / 3600:.2f} h, "
       f"{len({r['speaker'] for r in rows})} speakers, licenses {sorted({r['license'] for r in rows})}")
 if not a.push:

@@ -31,7 +31,8 @@ sh("pip install -q 'coqui-tts[codec]' khmer-nltk soxr pyyaml onnx onnxscript onn
 # code ships inside the Kaggle dataset (no git clone, so a private repo works too)
 CODE = next(Path("/kaggle/input").rglob("push_to_hf.py")).parent.parent
 os.chdir(CODE)
-env = {**os.environ, "PYTHONPATH": str(CODE / "src")}
+# ponytail: Kaggle often gives 2x T4 and coqui refuses >1 visible GPU; use one. trainer.distribute would use both.
+env = {**os.environ, "PYTHONPATH": str(CODE / "src"), "CUDA_VISIBLE_DEVICES": "0"}
 push = "--push" if os.environ.get("HF_TOKEN") else ""
 
 if PREP:  # data job: prepare -> upload, no training
@@ -50,6 +51,9 @@ c["data"] = [str(W / "data" / s) for s in subsets]
 c["out"] = str(W / "out")
 c.update(batch=min(c["batch"], 16), workers=2, save_step=1000)  # T4/P100: 16 GB
 ck = next(Path("/kaggle/input").rglob("best_model*.pth"), None)  # checkpoint shipped by kaggle_launch.py --ckpt
+if not ck and push:  # otherwise continue from the last session's release (every session publishes one)
+    if sh(f"hf download {REPO} best_model.pth --local-dir {W / 'prev'}").returncode == 0:
+        ck = W / "prev" / "best_model.pth"
 if ck:
     c["resume"] = str(ck)
 Path(W / "kaggle.yaml").write_text(yaml.safe_dump(c, allow_unicode=True))
@@ -57,6 +61,7 @@ Path(W / "kaggle.yaml").write_text(yaml.safe_dump(c, allow_unicode=True))
 r = sh(f"timeout {int(BUDGET_H * 3600)} python -m zio.tts.train {W / 'kaggle.yaml'}", env=env)
 print("training exit", r.returncode, "(124 = time budget reached, expected)")
 
-runs = sorted((W / "out").glob(f"{c['run']}-*"), key=lambda p: p.stat().st_mtime)
-assert runs, "no run dir produced"
+runs = sorted((W / "out").glob(f"{c['run']}-*/best_model.pth"), key=lambda p: p.stat().st_mtime)
+assert runs, "training produced no best_model.pth; see the log above"
+runs = [p.parent for p in runs]
 sh(f"python scripts/push_to_hf.py {runs[-1]} {REPO} {push} --note 'Trained on Kaggle with {CONFIG}.'", env=env, check=True)

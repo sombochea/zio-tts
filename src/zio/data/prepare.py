@@ -106,7 +106,7 @@ def main():
         meta = dict(source=a.source, license=a.license)
     items = {"slr42": slr42_items, "folder": folder_items}.get(a.corpus)
     items = items(a.src) if items else hf_items(a.corpus, **meta)
-    (a.dst / "wavs").mkdir(parents=True, exist_ok=True)
+    a.dst.mkdir(parents=True, exist_ok=True)
     kept = seen = hours = 0
     with open(a.dst / "metadata.jsonl", "w", encoding="utf-8") as f:
         for r in items:
@@ -115,9 +115,11 @@ def main():
             if t is None or y is None:
                 continue
             uid = r["id"]
-            sf.write(a.dst / "wavs" / f"{uid}.wav", y, SR, subtype="PCM_16")
+            rel = f"wavs/{kept // 1000:03d}/{uid}.wav"  # the Hub allows at most 10k files per folder
+            (a.dst / rel).parent.mkdir(parents=True, exist_ok=True)
+            sf.write(a.dst / rel, y, SR, subtype="PCM_16")
             dur = len(y) / SR
-            f.write(json.dumps({"id": uid, "file_name": f"wavs/{uid}.wav", "text": t, "lang": a.lang, "speaker": r["speaker"],
+            f.write(json.dumps({"id": uid, "file_name": rel, "text": t, "lang": a.lang, "speaker": r["speaker"],
                                 "emotion": r.get("emotion", "neutral"), "events": r.get("events", []), "duration": round(dur, 2),
                                 "source": meta["source"], "license": meta["license"]}, ensure_ascii=False) + "\n")
             kept += 1

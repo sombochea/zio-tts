@@ -23,7 +23,7 @@ Config keys: `data` (one folder or a list), `voices` (one embedding per `speaker
 uv tool install kaggle huggingface_hub && kaggle auth login && hf auth login
 ```
 On the kernel page, add the secret `HF_TOKEN` (Add-ons → Secrets) so it can upload. Without it, the release stays in the kernel output (`kaggle kernels output <user>/zio-tts-train -p kaggle_out`).
-Follow it with `kaggle kernels status|logs <user>/zio-tts-train`. To continue in a new session, relaunch with the newest `best_model*.pth` as `--ckpt`. Env knobs: `ZIO_CONFIG`, `ZIO_HOURS` (default 8.5), `ZIO_REPO`, `ZIO_DATA`.
+Follow it with `kaggle kernels status|logs <user>/zio-tts-train`. To continue, just relaunch without `--ckpt`: the kernel resumes from the checkpoint the last session published to `sombochea/zio-tts`. Only the first launch needs `--ckpt`. Kaggle's 2× T4 machines train on one GPU. Env knobs: `ZIO_CONFIG`, `ZIO_HOURS` (default 8.5), `ZIO_REPO`, `ZIO_DATA`.
 
 ## Fine-tune on your voice
 About 30 minutes of clean, consented audio is enough to start.
@@ -38,7 +38,7 @@ uv run zio speak "សួស្តី" me.wav --run outputs/tts_ft/<run> --voice 
 ## Why this design
 - **Graphemes, not phonemes**: espeak-ng has no Khmer voice, so no off-the-shelf G2P exists. Text is normalized and word-segmented (khmer-nltk) before synthesis, matching the word-spaced training text.
 - **VITS, not StyleTTS2/Kokoro**: those need a Khmer PL-BERT that doesn't exist. VITS is end-to-end, trains from scratch, and exports to ONNX.
-- **Quality comes from data**: v0 (46 min, 1 speaker) sounded poor, and v1 (2.9 h, 16 speakers) is understandable. v2 adds 7.8 h of conversational speech (seanghay), and DDD (~30 h, female voices too) comes next. Emotional, studio-quality voices need recordings ([02](02-recording.md)).
+- **Quality comes from data**: v0 (46 min, 1 speaker) sounded poor, and v1 (2.9 h, 16 speakers) is understandable. v2 trains on ~40 h, adding conversational speech (seanghay) and male and female voices (DDD). Emotional, studio-quality voices need recordings ([02](02-recording.md)).
 
 ## Expressiveness at inference
 `--speed` scales durations, and `--expressive` is the VITS noise scale (default 0.667; higher is livelier, lower is flatter and steadier). The ONNX `scales` input is `[expressive, 1/speed, 0.8]`.

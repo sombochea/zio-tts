@@ -37,7 +37,7 @@ Each subset is a folder with `wavs/` and `metadata.jsonl` (Hugging Face *audiofo
 
 | Column | Example | |
 |---|---|---|
-| `file_name` | `wavs/km_6753_001.wav` | audio path |
+| `file_name` | `wavs/000/km_6753_001.wav` | audio path |
 | `text` | `សួស្តី តើ អ្នក សុខសប្បាយ ជា ទេ` | normalized (numbers as words), word-spaced |
 | `speaker` | `km_6753`, `ddd_f-adt1-0001` | unique across subsets |
 | `emotion` | `neutral` | `neutral`, `happy`, `sad`, `angry`, `surprised`, `whisper`, ... |

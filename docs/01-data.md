@@ -6,9 +6,9 @@ hf download sombochea/zio-tts-data --repo-type dataset --local-dir data/processe
 ```
 
 ## Format
-Each folder is a Hugging Face *audiofolder*: `wavs/*.wav` + `metadata.jsonl`, one row per clip:
+Each folder is a Hugging Face *audiofolder*: `wavs/<shard>/*.wav` (1,000 per folder; the Hub caps folders at 10k files) + `metadata.jsonl`, one row per clip:
 ```json
-{"id": "km_6753_001", "file_name": "wavs/km_6753_001.wav", "text": "សួស្តី តើ អ្នក សុខសប្បាយ ជា ទេ", "lang": "km",
+{"id": "km_6753_001", "file_name": "wavs/000/km_6753_001.wav", "text": "សួស្តី តើ អ្នក សុខសប្បាយ ជា ទេ", "lang": "km",
  "speaker": "km_6753", "emotion": "neutral", "events": [], "duration": 2.4, "source": "https://openslr.org/42", "license": "cc-by-sa-4.0"}
 ```
 - Audio: 24 kHz mono 16-bit, 1–20 s, silence-trimmed, −20 dBFS RMS (peaks ≤ 0.95).
