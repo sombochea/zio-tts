@@ -18,7 +18,7 @@ ap.add_argument("--public", action="store_true")
 ap.add_argument("--note", default="")
 a = ap.parse_args()
 st = Path(tempfile.mkdtemp())
-stage(a.src, st, Path(__file__).parent.parent / "docs" / "model_cards" / "tts.md", a.repo, a.note)
+stage(a.src, st, Path(__file__).parent.parent / "docs" / "cards" / "tts.md", a.repo, a.note)
 if not a.push:
     print(f"\nDRY RUN: would upload to {a.repo} ({'public' if a.public else 'private'}). Add --push.")
 else:

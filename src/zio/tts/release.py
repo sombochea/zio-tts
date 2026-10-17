@@ -10,7 +10,7 @@ from zio.tts.export_onnx import export, write_vocab
 from zio.tts.infer import synthesize
 
 SAMPLES = ["សួស្តី តើអ្នកសុខសប្បាយជាទេ", "ថ្ងៃនេះអាកាសធាតុល្អណាស់", "ម្ហូបនេះតម្លៃ ៥០០០៛", "កម្ពុជាជាប្រទេសមានប្រវត្តិសាស្ត្រយូរលង់"]
-VOICES = ("km_6753__neutral", "km_7548__neutral", "km_3154__neutral")
+VOICES = ("km_6753__neutral", "km_7548__neutral", "seanghay__neutral")  # plus the first female voice, if any
 
 
 def stage(src: Path, st: Path, card: Path, repo: str, note: str = "") -> None:
@@ -34,7 +34,8 @@ def stage(src: Path, st: Path, card: Path, repo: str, note: str = "") -> None:
         synthesize(str(src), t, str(st / "samples" / f"sample{i}.wav"))
     extra = []
     if multi:  # same sentence, different voices
-        for v in VOICES:
+        names = list(torch.load(src / "speakers.pth", map_location="cpu", weights_only=False))
+        for v in [v for v in VOICES if v in names] + [n for n in names if n.startswith("ddd_f")][:1]:
             synthesize(str(src), SAMPLES[0], str(st / "samples" / f"voice_{v}.wav"), v)
             extra.append(f"- voice `{v}` — `samples/voice_{v}.wav`")
     text = card.read_text(encoding="utf-8").replace("{{REPO}}", repo)

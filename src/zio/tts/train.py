@@ -3,6 +3,7 @@
 uv run --extra tts python -m zio.tts.train configs/tts_tiny.yaml
 """
 import json
+import random
 import sys
 from functools import partial
 from pathlib import Path
@@ -29,14 +30,33 @@ def manifest_formatter(root_path, meta_file, ignored_speakers=None, emotions=Fal
     out = []
     for line in Path(root_path, meta_file).read_text(encoding="utf-8").splitlines():
         r = json.loads(line)
-        out.append({"text": r["text"].lower(), "audio_file": str(Path(root_path, r["audio"])),
+        out.append({"text": r["text"].lower(), "audio_file": str(Path(root_path, r["file_name"])),
                     "speaker_name": voice_id(r, emotions), "raw_speaker": r["speaker"], "root_path": str(root_path), "language": r["lang"]})
     return out
 
 
+def as_restorable(ckpt: str) -> str:
+    # Published checkpoints are weights only; coqui's restore also wants step/epoch. Layers whose shape changed
+    # (e.g. the speaker table when you add voices) are re-initialised by coqui, everything else is reused.
+    # ponytail: old voices' embeddings are relearned too; map them by name if fine-tunes need to keep them exact.
+    if not ckpt:
+        return ckpt
+    import tempfile
+
+    import torch
+
+    ck = torch.load(ckpt, map_location="cpu", weights_only=False)
+    if "step" in ck:
+        return ckpt
+    out = Path(tempfile.mkdtemp()) / "restore.pth"
+    torch.save({"model": ck["model"], "step": 0, "epoch": 0}, out)
+    return str(out)
+
+
 def main(path: str):
     c = yaml.safe_load(open(path))
-    ds = BaseDatasetConfig(formatter="", dataset_name="zio", path=c["data"], meta_file_train="manifest.jsonl")
+    dirs = [c["data"]] if isinstance(c["data"], str) else c["data"]  # one folder per source (see docs/01-data.md)
+    dss = [BaseDatasetConfig(formatter="", dataset_name=Path(d).name, path=d, meta_file_train="metadata.jsonl") for d in dirs]
     cfg = VitsConfig(
         audio=VitsAudioConfig(sample_rate=24000, win_length=1024, hop_length=256, num_mels=80, mel_fmin=0, mel_fmax=None),
         run_name=c["run"], output_path=c["out"], batch_size=c["batch"], eval_batch_size=c["batch"],
@@ -48,12 +68,13 @@ def main(path: str):
         characters=CharactersConfig(characters_class="TTS.tts.utils.text.characters.Graphemes", pad="<PAD>",
                                     eos="<EOS>", bos="<BOS>", blank="<BLNK>", characters=CHARS, punctuations=PUNCT + " ",
                                     phonemes=None),
-        test_sentences=c.get("test_sentences", []), datasets=[ds], cudnn_benchmark=False)
+        test_sentences=c.get("test_sentences", []), datasets=dss, cudnn_benchmark=False)
     ap = AudioProcessor.init_from_config(cfg)
     tok, cfg = TTSTokenizer.init_from_config(cfg)
-    train, evl = load_tts_samples(ds, eval_split=True, formatter=partial(manifest_formatter, emotions=c.get("voices", False)),
-                                  eval_split_max_size=c.get("eval_size", 50), eval_split_size=0.02)
-    allx = train + evl
+    fmt = partial(manifest_formatter, emotions=c.get("voices", False))
+    # one call per folder: coqui drops a custom formatter after the first dataset in a list
+    allx = [s for d in dss for s in load_tts_samples(d, eval_split=False, formatter=fmt)[0]]
+    random.Random(0).shuffle(allx)  # the eval split below takes the tail; mix sources so every folder is in it
     if c.get("speakers"):  # v0 is single-voice: mixing speakers blurs the voice. Filter BEFORE splitting.
         allx = [x for x in allx if x["raw_speaker"] in set(c["speakers"])]
     if c.get("limit"):
@@ -68,7 +89,7 @@ def main(path: str):
         cfg.model_args.num_speakers = sm.num_speakers
         cfg.num_speakers = sm.num_speakers
     model = Vits(cfg, ap, tok, speaker_manager=sm)
-    Trainer(TrainerArgs(restore_path=c.get("resume", "")), cfg, c["out"], model=model, train_samples=train, eval_samples=evl).fit()
+    Trainer(TrainerArgs(restore_path=as_restorable(c.get("resume", ""))), cfg, c["out"], model=model, train_samples=train, eval_samples=evl).fit()
 
 
 if __name__ == "__main__":

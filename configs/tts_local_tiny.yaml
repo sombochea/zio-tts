@@ -1,6 +1,6 @@
 # Tiny-RAM profile (8 GB machines): batch 2, clips <= 4 s.
 # Fine as a pipeline check or a first listenable model on one speaker; real quality needs Modal.
-data: data/processed/km_male
+data: data/processed/slr42_km_male
 run: tts_local_tiny
 out: outputs/tts_local_tiny
 speakers: [km_6753]

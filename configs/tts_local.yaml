@@ -1,6 +1,6 @@
 # Low-RAM local TTS (Apple silicon / CPU). Short clips + small batch keep memory low.
 # Fine as a pipeline check or a first listenable model on one speaker; real quality needs Modal.
-data: data/processed/km_male
+data: data/processed/slr42_km_male
 run: tts_local
 out: outputs/tts_local
 speakers: [km_6753]
