@@ -1,9 +1,8 @@
-# v2: all open Khmer data in sombochea/zio-tts-data (SLR42 + seanghay + DDD, ~40 h, male + female),
-# initialised from v1 (launch with --ckpt). Voices: km_* (SLR42, same ids as v1), seanghay, ddd_<speaker>.
+# v2: the open Khmer data in sombochea/zio-tts-data, initialised from v1 (launch with --ckpt).
+# Voices: km_* (SLR42, same ids as v1), seanghay, ddd_<speaker>. Add ddd_km (~30 h, male + female) once it is uploaded.
 data:
   - data/processed/slr42_km_male
   - data/processed/seanghay_km
-  - data/processed/ddd_km
 run: zio_tts_v2
 out: outputs/tts_v2
 voices: true

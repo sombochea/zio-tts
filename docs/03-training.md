@@ -38,7 +38,7 @@ uv run zio speak "សួស្តី" me.wav --run outputs/tts_ft/<run> --voice 
 ## Why this design
 - **Graphemes, not phonemes**: espeak-ng has no Khmer voice, so no off-the-shelf G2P exists. Text is normalized and word-segmented (khmer-nltk) before synthesis, matching the word-spaced training text.
 - **VITS, not StyleTTS2/Kokoro**: those need a Khmer PL-BERT that doesn't exist. VITS is end-to-end, trains from scratch, and exports to ONNX.
-- **Quality comes from data**: v0 (46 min, 1 speaker) sounded poor, and v1 (2.9 h, 16 speakers) is understandable. v2 adds ~15–35 h of open data and female voices. Emotional, studio-quality voices need recordings ([02](02-recording.md)).
+- **Quality comes from data**: v0 (46 min, 1 speaker) sounded poor, and v1 (2.9 h, 16 speakers) is understandable. v2 adds 7.8 h of conversational speech (seanghay), and DDD (~30 h, female voices too) comes next. Emotional, studio-quality voices need recordings ([02](02-recording.md)).
 
 ## Expressiveness at inference
 `--speed` scales durations, and `--expressive` is the VITS noise scale (default 0.667; higher is livelier, lower is flatter and steadier). The ONNX `scales` input is `[expressive, 1/speed, 0.8]`.

@@ -37,7 +37,7 @@ Bring ~30 min of consented audio and start from `best_model.pth`. New voices get
 | | |
 |---|---|
 | Architecture | VITS (coqui-tts) on graphemes (Khmer characters + a–z); no phonemizer, since espeak-ng has no Khmer |
-| Data | [sombochea/zio-tts-data](https://huggingface.co/datasets/sombochea/zio-tts-data): OpenSLR 42, seanghay/km-speech-corpus and DDD khm-asr-cultural (QC-filtered). The checkpoint note below says which subsets and steps this release used |
+| Data | subsets of [sombochea/zio-tts-data](https://huggingface.co/datasets/sombochea/zio-tts-data) (OpenSLR 42, seanghay/km-speech-corpus, ...). The checkpoint note below says which subsets and steps this release used |
 | Files | `best_model.pth` (weights only), `config.json`, `speakers.pth`, `zio-tts.onnx`, `vocab.json` |
 
 ## Limitations

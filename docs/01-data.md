@@ -24,6 +24,12 @@ Each folder is a Hugging Face *audiofolder*: `wavs/*.wav` + `metadata.jsonl`, on
 
 Run each as `uv run --extra stt --extra tts python -m zio.data.prepare ...`. Hugging Face sources are streamed, never fully downloaded. `--max-hours` caps the size, and `--min-snr` drops noisy clips.
 
+Not enough disk or bandwidth (DDD streams from a 91 GB source)? Prepare and upload on Kaggle instead. It's a CPU job, so it doesn't queue for a GPU:
+```bash
+uv run python scripts/kaggle_launch.py --prep "ddd data/processed/ddd_km --max-hours 30 --min-snr 20"
+```
+The first time, attach the `HF_TOKEN` secret to the `zio-data-prep` kernel ([03](03-training.md#kaggle-once)).
+
 ## Add a source
 1. Add an entry to `CORPORA` in [`prepare.py`](../src/zio/data/prepare.py). For a Hub dataset that's the repo, its text column and its speaker column, with no new code.
 2. Prepare it, listen to a few clips, then upload: `uv run python scripts/push_dataset.py data/processed/<folder> --push`.

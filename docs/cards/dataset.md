@@ -26,9 +26,9 @@ Or download folders as-is for training: `hf download sombochea/zio-tts-data --re
 ## Subsets
 | Subset | Source | License | Speakers | Notes |
 |---|---|---|---|---|
-| `slr42_km_male` | [OpenSLR 42](https://openslr.org/42) (Google) | CC BY-SA 4.0 | 16 male | studio, news-style reading |
-| `seanghay_km` | [seanghay/km-speech-corpus](https://huggingface.co/datasets/seanghay/km-speech-corpus) | CC BY 4.0 | unlabeled (one id) | conversational sentences, 16 kHz source |
-| `ddd_km` | [Digital-Divide-Data/khm-asr-cultural](https://huggingface.co/datasets/Digital-Divide-Data/khm-asr-cultural) | CC BY-SA 4.0 | male + female | QC-filtered subset, 16 kHz source |
+| `slr42_km_male` | [OpenSLR 42](https://openslr.org/42) (Google) | CC BY-SA 4.0 | 16 male | studio, news-style reading; 2.9 h |
+| `seanghay_km` | [seanghay/km-speech-corpus](https://huggingface.co/datasets/seanghay/km-speech-corpus) | CC BY 4.0 | unlabeled (one id) | conversational sentences, 16 kHz source; 7.8 h kept of 10.4 h (noisy clips dropped) |
+| `ddd_km` | [Digital-Divide-Data/khm-asr-cultural](https://huggingface.co/datasets/Digital-Divide-Data/khm-asr-cultural) | CC BY-SA 4.0 | male + female | up to 30 h of clips with SNR ≥ 20 dB, 16 kHz source |
 
 Every row carries its own `source` and `license`. The collection is CC BY-SA 4.0 because of its share-alike parts. Credit the original authors when you use a subset.
 
