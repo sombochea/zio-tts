@@ -16,11 +16,13 @@ ap.add_argument("repo")
 ap.add_argument("--push", action="store_true")
 ap.add_argument("--public", action="store_true")
 ap.add_argument("--note", default="")
+ap.add_argument("--stage", type=Path, help="where to stage the release (default: a temp dir)")
 a = ap.parse_args()
-st = Path(tempfile.mkdtemp())
+st = a.stage or Path(tempfile.mkdtemp())
 stage(a.src, st, Path(__file__).parent.parent / "docs" / "cards" / "tts.md", a.repo, a.note)
 if not a.push:
-    print(f"\nDRY RUN: would upload to {a.repo} ({'public' if a.public else 'private'}). Add --push.")
+    print(f"\nDRY RUN: would upload to {a.repo} ({'public' if a.public else 'private'}). Add --push, or later:\n"
+          f"  hf upload {a.repo} {st} . {'' if a.public else '--private'}")
 else:
     import subprocess
 

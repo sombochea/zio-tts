@@ -13,7 +13,8 @@ DATA_REPO = os.environ.get("ZIO_DATA", "sombochea/zio-tts-data")
 CONFIG = os.environ.get("ZIO_CONFIG", "configs/tts_v2.yaml")
 PREP = os.environ.get("ZIO_PREP", "")  # e.g. "ddd data/processed/ddd_km --max-hours 30 --min-snr 20"
 BUDGET_H = float(os.environ.get("ZIO_HOURS", "8.5"))  # stop before Kaggle's session limit, then publish what we have
-W = Path("/kaggle/working")
+W = Path("/kaggle/working")  # saved as the kernel's output
+D = Path("/kaggle/tmp") if Path("/kaggle/tmp").is_dir() else W  # scratch for training data (not worth saving)
 
 
 def sh(cmd, **kw):
@@ -37,7 +38,7 @@ push = "--push" if os.environ.get("HF_TOKEN") else ""
 
 if PREP:  # data job: prepare -> upload, no training
     assert push, "the data job needs the HF_TOKEN secret, or the prepared data is lost when the session ends"
-    PREP = PREP.replace("data/processed", str(W / "data"))
+    PREP = PREP.replace("data/processed", str(D / "data"))
     sh(f"python -m zio.data.prepare {PREP}", env=env, check=True)
     sh(f"python scripts/push_dataset.py {PREP.split()[1]} --repo {DATA_REPO} {push}", env=env, check=True)
     raise SystemExit
@@ -45,11 +46,11 @@ if PREP:  # data job: prepare -> upload, no training
 c = yaml.safe_load(Path(CONFIG).read_text())
 dirs = [c["data"]] if isinstance(c["data"], str) else c["data"]
 subsets = [Path(d).name for d in dirs]
-sh(f"hf download {DATA_REPO} --repo-type dataset --local-dir {W / 'data'} --max-workers 32 "  # ~25k small files
+sh(f"hf download {DATA_REPO} --repo-type dataset --local-dir {D / 'data'} --max-workers 32 "  # ~25k small files
    + " ".join(f"--include '{s}/*'" for s in subsets), check=True)
-missing = [s for s in subsets if not (W / "data" / s / "metadata.jsonl").exists()]
+missing = [s for s in subsets if not (D / "data" / s / "metadata.jsonl").exists()]
 assert not missing, f"not on the Hub (yet?): {missing}. Upload them first (docs/01-data.md) or drop them from {CONFIG}"
-c["data"] = [str(W / "data" / s) for s in subsets]
+c["data"] = [str(D / "data" / s) for s in subsets]
 c["out"] = str(W / "out")
 c.update(batch=min(c["batch"], 16), workers=2, save_step=1000)  # T4/P100: 16 GB
 ck = next(Path("/kaggle/input").rglob("best_model*.pth"), None)  # checkpoint shipped by kaggle_launch.py --ckpt
@@ -66,4 +67,6 @@ print("training exit", r.returncode, "(124 = time budget reached, expected)")
 runs = sorted((W / "out").glob(f"{c['run']}-*/best_model.pth"), key=lambda p: p.stat().st_mtime)
 assert runs, "training produced no best_model.pth; see the log above"
 runs = [p.parent for p in runs]
-sh(f"python scripts/push_to_hf.py {runs[-1]} {REPO} {push} --note 'Trained on Kaggle with {CONFIG}.'", env=env, check=True)
+# staged under /kaggle/working so a run without the token still leaves an uploadable release in the output
+sh(f"python scripts/push_to_hf.py {runs[-1]} {REPO} {push} --stage {W / 'release'} --note 'Trained on Kaggle with {CONFIG}.'",
+   env=env, check=True)

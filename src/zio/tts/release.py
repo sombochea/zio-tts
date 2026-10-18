@@ -16,9 +16,11 @@ VOICES = ("km_6753__neutral", "km_7548__neutral", "seanghay__neutral")  # plus t
 def stage(src: Path, st: Path, card: Path, repo: str, note: str = "") -> None:
     shutil.rmtree(st, ignore_errors=True)
     (st / "samples").mkdir(parents=True)
-    # drop optimizer state (998 MB -> 333 MB); coqui's loader still needs the disc.* weights
-    torch.save({"model": torch.load(src / "best_model.pth", map_location="cpu", weights_only=False)["model"]},
-               st / "best_model.pth")
+    # Newest checkpoint, not best_model.pth: coqui picks "best" by VITS eval loss on ~20 clips, which is GAN noise
+    # (a 10-epoch run kept its epoch-1 weights as best). Drop optimizer state (998 MB -> 333 MB); keep disc.* (loader needs it).
+    ck = max(src.glob("checkpoint_*.pth"), key=lambda p: int(p.stem.split("_")[1]), default=src / "best_model.pth")
+    print("releasing", ck.name)
+    torch.save({"model": torch.load(ck, map_location="cpu", weights_only=False)["model"]}, st / "best_model.pth")
     cfg = json.loads((src / "config.json").read_text(encoding="utf-8"))
     cfg["output_path"] = "."  # don't publish training-machine paths
     for d in (cfg, cfg.get("model_args") or {}):
@@ -28,15 +30,16 @@ def stage(src: Path, st: Path, card: Path, repo: str, note: str = "") -> None:
     multi = (src / "speakers.pth").exists()
     if multi:
         shutil.copy(src / "speakers.pth", st / "speakers.pth")
-    export(str(src), str(st / "zio-tts.onnx"))
-    write_vocab(str(src), str(st / "vocab.json"))
+    # st is now a complete run dir with the released weights; export and samples come from exactly those
+    export(str(st), str(st / "zio-tts.onnx"))
+    write_vocab(str(st), str(st / "vocab.json"))
     for i, t in enumerate(SAMPLES, 1):
-        synthesize(str(src), t, str(st / "samples" / f"sample{i}.wav"))
+        synthesize(str(st), t, str(st / "samples" / f"sample{i}.wav"))
     extra = []
     if multi:  # same sentence, different voices
-        names = list(torch.load(src / "speakers.pth", map_location="cpu", weights_only=False))
+        names = list(torch.load(st / "speakers.pth", map_location="cpu", weights_only=False))
         for v in [v for v in VOICES if v in names] + [n for n in names if n.startswith("ddd_f")][:1]:
-            synthesize(str(src), SAMPLES[0], str(st / "samples" / f"voice_{v}.wav"), v)
+            synthesize(str(st), SAMPLES[0], str(st / "samples" / f"voice_{v}.wav"), v)
             extra.append(f"- voice `{v}` — `samples/voice_{v}.wav`")
     text = card.read_text(encoding="utf-8").replace("{{REPO}}", repo)
     if note:
